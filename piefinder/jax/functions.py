@@ -52,5 +52,11 @@ def multiply(func1:BaseFunction,k:BaseFunction)->BaseFunction:
         return func1.func(t)*k
     return BaseFunction(func)
 
-
-
+class Constant(BaseFunction):
+    """
+    A constant function.
+    """
+    def __init__(self, k: float):
+        def func(_t):
+            return k
+        super().__init__(func)

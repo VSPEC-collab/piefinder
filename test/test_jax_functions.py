@@ -4,6 +4,8 @@ Tests for piefinder.jax.functions
 
 from piefinder.jax.functions import BaseFunction, add, multiply
 
+from piefinder.jax import functions
+
 def test_basefunction():
     """
     Test the BaseFunction class
@@ -35,4 +37,12 @@ def test_multiply():
     k = 2
     func1 = BaseFunction(func1)
     func = multiply(func1, k)
+    assert func(1) == 2
+
+def test_constant():
+    """
+    Test the constant function
+    """
+    k = 2
+    func = functions.Constant(k)
     assert func(1) == 2
