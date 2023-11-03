@@ -1,13 +1,13 @@
 [project]
-name = "vspec-template"
+name = "piefinder"
 authors = [
     {name = "Ted Johnson", email = "ted.johnson@unlv.edu"},
 ]
-description = "Template for creating new VSPEC projects."
+description = "Find the PIE."
 readme = "docs/readme.rst"
-repository = "https://github.com/VSPEC-collab/vspec-template"
+repository = "https://github.com/VSPEC-collab/piefinder"
 
-version = "1.0"
+version = "0.1"
 requires-python = ">=3.8"
 license = {text = "MIT"}
 dependencies = [
