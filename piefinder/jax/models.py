@@ -7,6 +7,8 @@ from typing import Callable
 
 from GridPolator.grid import GridSpectra
 
+from piefinder.jax.config import wl_unit
+
 class GridModel:
     def __init__(self, spec: GridSpectra, func: Callable):
         self.spec = spec

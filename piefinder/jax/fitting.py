@@ -122,7 +122,7 @@ def levenberg_marquardt(
                 f'Starting iteration {i}. Log(mean(|residual|)) = {log_mean_residual:.1f}')
 
         jac = jacobian(params, *args)
-        hess = jnp.dot(jnp.transpose(jac), jac)
+        hess = jnp.matmul(jnp.transpose(jac), jac)
         lm_update = jnp.linalg.solve(
             hess + lambda_lm * jnp.eye(len(params)),
             jnp.matmul(jnp.transpose(jac), residuals)
