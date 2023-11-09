@@ -85,7 +85,7 @@ tforms = [
     transforms.Sigmoid()
 ]
 
-# @jit
+@jit
 def residuals(
     params:jnp.ndarray,
     w:jnp.ndarray,
@@ -147,8 +147,8 @@ im = ax.pcolormesh(times.value,wl.value,final_res/data*1e6)
 ax.set_xlabel(f'time [{times.unit:latex}]')
 ax.set_ylabel(f'wavelength [{wl.unit:latex}]')
 
-fig.colorbar(im,ax=ax,label = 'residual (ppm)')
-0
+_=fig.colorbar(im,ax=ax,label = 'residual (ppm)')
+
 
     
     
