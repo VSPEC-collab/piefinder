@@ -1,6 +1,6 @@
 """
 Fit a spectrum
---------------
+==============
 
 This example shows how to fit a spectrum using piefinder.
 
