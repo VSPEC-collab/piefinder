@@ -206,7 +206,21 @@ def get_basis_coeffs(Y:np.ndarray,indices:Tuple[int,...])->np.ndarray:
     # dvs = tuple(dY[:,index] for index in indices)
     n_spectra = Y.shape[1]
     return np.array([get_coeffs(Y[:,i],vs) for i in range(n_spectra)]).T
-def reconstruct(Y,dY,indices):
+def reconstruct(Y:np.ndarray,dY:np.ndarray,indices:Tuple[int,...]):
+    """
+    Reconstruct the phase curve given the basis vectors specified
+    by the indicies.
+    
+    Parameters
+    ----------
+    Y : np.ndarray
+        The array of spectra. Axis 0 is the spectral axis and
+        axis 1 is the time axis.
+    dY : np.ndarray
+        The uncertainty in the array of spectra.
+    indices : Tuple[int,...]
+        The indicies of the basis vectors.
+    """
     vs = tuple(Y[:,index] for index in indices)
     dvs = tuple(dY[:,index] for index in indices)
     coeffs = get_basis_coeffs(Y,indices)
