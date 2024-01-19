@@ -100,15 +100,12 @@ def get_logl_matrix(Y:np.ndarray,dY:np.ndarray):
     indices = np.triu_indices(N_vec)
     for row, col in zip(indices[0],indices[1]):
         if not row==col:
-            u = Y[:,row]
-            du = dY[:,row]
-            v = Y[:,col]
-            dv = dY[:,col]
-            logl = get_log_likelihood(v,dv,(u,),(du,))
+            indices = (row,col)
+            logl = get_sum_logl_from_indicies(Y,dY,indices)
             mat[row,col] = logl
     return mat
 
-def get_basis_indices(logl_mat:np.ndarray):
+def get_first_two_basis_indices(logl_mat:np.ndarray):
     """
     Find the indicies of the likelihood matrix that
     can be used as the basis.
@@ -123,47 +120,39 @@ def get_basis_indices(logl_mat:np.ndarray):
     Tuple
         The indices of the matrix that can be used as the basis.
     """
-    i,j = np.argwhere(logl_mat==np.nanmin(logl_mat))[0]
+    i,j = np.argwhere(logl_mat==np.nanmax(logl_mat))[0]
     return i,j
 
-def get_ranked_basis_indices(logl_mat:np.ndarray):
+def get_next_best_index(Y:np.ndarray,dY:np.ndarray,prev_indices:Tuple[int,...]):
+    """
+    Get the next best basis candidate.
+    """
+    N_vec = Y.shape[1]
+    logl_arr = []
+    for i in range(N_vec):
+        if i not in prev_indices:
+            indices = prev_indices + (i,)
+            logl = np.sum(get_logl_from_indicies(Y,dY,indices))
+            logl_arr.append(logl)
+        else:
+            logl_arr.append(np.nan)
+    return np.nanargmax(logl_arr)
+
+
+def get_ranked_basis_indices(Y:np.ndarray,dY:np.ndarray):
     """
     Sort the indicies of the specta to rank them
     by best basis candidate.
     """
+    i,j = get_first_two_basis_indices(get_logl_matrix(Y,dY))
+    indices = (i,j)
+    n_spectra = Y.shape[1]
+    while len(indices) < n_spectra:
+        i = get_next_best_index(Y,dY,indices)
+        indices = indices + (i,)
+    return indices
     
-    def get_next_lowest_index(_logl_mat:np.ndarray,indicies:Tuple[int,...]):
-        """
-        Get the next lowest index in the matrix.
-        """
-        mask = np.zeros_like(_logl_mat)
-        for index in indicies:
-            mask[index,:] = 1
-            mask[:,index] = 1
-        for i in indicies:
-            for j in indicies:
-                mask[i,j] = 0
-        mask = mask.astype(bool)
-        _logl_mat[~mask] = np.nan
-        lowest = np.nanmin(_logl_mat[mask])
-        ind_low = np.argwhere(_logl_mat==lowest)[0]
-        if ind_low[0] in indicies:
-            return ind_low[1]
-        else:
-            return ind_low[0]
         
-    mat_min = np.nanmin(logl_mat)
-    lowest_indices = np.argwhere(logl_mat==mat_min)[0]
-    ranked = list(lowest_indices)
-    n_spectra = logl_mat.shape[0]
-    while len(ranked) < n_spectra:
-        k = get_next_lowest_index(logl_mat,ranked)
-        ranked.append(k)
-    return tuple(ranked)
-        
-        
-        
-
 def get_logl_from_indicies(Y:np.ndarray,dY:np.ndarray,indices:Tuple[int,...])->np.ndarray:
     """
     Given a set of indicies, get the log likelihood that each
@@ -185,18 +174,42 @@ def get_sum_logl_from_indicies(Y:np.ndarray,dY:np.ndarray,indices:Tuple[int,...]
     n_spectra = Y.shape[1]
     return np.sum([get_log_likelihood(Y[:,i],dY[:,i],vs,dvs) for i in range(n_spectra)])
 
-def get_sum_logl_from_ranked(Y:np.ndarray,dY:np.ndarray,ranked:Tuple[int,...])->float:
+def get_sum_logl_from_ranked(Y:np.ndarray,dY:np.ndarray,ranked:Tuple[int,...])->Tuple[np.ndarray,np.ndarray]:
     """
     Given a ranked set of indicies, get the log likelihood that the set of spectra
     can be approximated as a linear combination of the spectra specified by
     the indicies.
     """
     len_ranked = len(ranked)
-    x = np.arange(1,len_ranked+1)
-    y = []
-    for _x in x:
-        y.append(get_sum_logl_from_indicies(Y,dY,ranked[:_x]))
-    return x,y
+    number_of_bases = np.arange(1,len_ranked+1)
+    logl = []
+    for _x in number_of_bases:
+        logl.append(get_sum_logl_from_indicies(Y,dY,ranked[:_x]))
+    return number_of_bases,np.array(logl)
+
+def get_aic(number_of_bases:np.ndarray,logl:np.ndarray):
+    """
+    Compute the Akaike information criterion
+    
+    Parameters
+    ----------
+    number_of_bases : np.ndarray
+        The number of basis vectors.
+    logl : np.ndarray
+        The log likelihoods.
+    
+    Returns
+    -------
+    np.ndarray
+        The AIC for each model
+    
+    Notes
+    -----
+    AIC = -2*logl + 2*number_of_bases
+    A better model has a lower AIC.
+    """
+    return -2*logl + 2*number_of_bases
+    
 
 def get_basis_coeffs(Y:np.ndarray,indices:Tuple[int,...])->np.ndarray:
     """
@@ -206,7 +219,7 @@ def get_basis_coeffs(Y:np.ndarray,indices:Tuple[int,...])->np.ndarray:
     # dvs = tuple(dY[:,index] for index in indices)
     n_spectra = Y.shape[1]
     return np.array([get_coeffs(Y[:,i],vs) for i in range(n_spectra)]).T
-def reconstruct(Y:np.ndarray,dY:np.ndarray,indices:Tuple[int,...]):
+def reconstruct(Y:np.ndarray,dY:np.ndarray,indices:Tuple[int,...],coeffs:np.ndarray):
     """
     Reconstruct the phase curve given the basis vectors specified
     by the indicies.
@@ -223,7 +236,7 @@ def reconstruct(Y:np.ndarray,dY:np.ndarray,indices:Tuple[int,...]):
     """
     vs = tuple(Y[:,index] for index in indices)
     dvs = tuple(dY[:,index] for index in indices)
-    coeffs = get_basis_coeffs(Y,indices)
+    
     Y_approx = np.array([construct_approx(vs,coeffs[:,i]) for i in range(coeffs.shape[1])]).T
     dY_approx = np.array([construct_approx(dvs,coeffs[:,i]) for i in range(coeffs.shape[1])]).T
     return Y_approx,dY_approx

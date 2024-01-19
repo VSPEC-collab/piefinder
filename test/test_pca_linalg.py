@@ -7,7 +7,7 @@ import pytest
 
 from piefinder.pca.linalg import (
     get_log_likelihood, get_coeffs, get_logl_matrix,
-    get_basis_indices, construct_approx,get_logl_from_indicies,
+    get_first_two_basis_indices, construct_approx,get_logl_from_indicies,
     get_ranked_basis_indices, get_sum_logl_from_indicies,
     get_sum_logl_from_ranked, get_basis_coeffs, reconstruct
     )
@@ -75,7 +75,7 @@ def test_get_basis_indicies():
     Y = np.array([[1,0,0],[1,1,0],[-1,2,0],[0,1,0]]).T
     dy = np.array([[1e-6,1e-6,1e-6],[1e-6,1e-6,1e-6],[1e-6,1e-6,1e-6],[1e-6,1e-6,1e-6]]).T
     logl_mat = get_logl_matrix(Y,dy)
-    indices = get_basis_indices(logl_mat)
+    indices = get_first_two_basis_indices(logl_mat)
     vs = (Y[:,indices[0]],Y[:,indices[1]])
     for i in range(Y.shape[1]):
         w = Y[:,i]
